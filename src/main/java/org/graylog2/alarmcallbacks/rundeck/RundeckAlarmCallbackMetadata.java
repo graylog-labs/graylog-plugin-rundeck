@@ -5,9 +5,6 @@ import org.graylog2.plugin.Version;
 
 import java.net.URI;
 
-/**
- * Implement the PluginMetaData interface here.
- */
 public class RundeckAlarmCallbackMetadata implements PluginMetaData {
     @Override
     public String getUniqueId() {
