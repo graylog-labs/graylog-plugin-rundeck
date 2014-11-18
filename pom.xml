@@ -6,7 +6,7 @@
 
     <groupId>org.graylog2</groupId>
     <artifactId>graylog2-alarmcallback-rundeck</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>0.90.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>${project.artifactId}</name>
