@@ -1,7 +1,7 @@
 Rundeck alarm callback plugin
 =============================
 
-An alarm callback plugin for integrating [Rundeck](http://rundeck.org) into [Graylog2](http://www.graylog2.org).
+An alarm callback plugin for integrating [Rundeck](http://rundeck.org) into [Graylog](https://www.graylog2.org).
 
 ## Build
 
@@ -11,7 +11,7 @@ You can build the plugin (JAR) with `mvn package`. DEB and RPM packages can be b
 
 ## License
 
-Copyright (c) 2014 TORCH GmbH
+Copyright (c) 2014-2015 TORCH GmbH
 
 This library is licensed under the Apache License, Version 2.0.
 
