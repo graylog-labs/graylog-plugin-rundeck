@@ -21,12 +21,8 @@ public class RundeckAlarmCallbackTest {
             .put("job_id", "test-job-id")
             .put("api_token", "test_api_token")
             .put("args", "-test arg")
-            .put("filter_include_node_name", "test_node1")
-            .put("filter_include_hostname", "test.node.1")
-            .put("filter_include_tags", "test-tag")
-            .put("filter_exclude_node_name", "test_node2")
-            .put("filter_exclude_hostname", "test.node.2")
-            .put("filter_exclude_tags", "test-tag")
+            .put("filter_include", "name:node01,tags:linux")
+            .put("filter_exclude", "name:node02,tags:windows")
             .put("exclude_precedence", true)
             .build();
     private RundeckAlarmCallback alarmCallback;
@@ -49,9 +45,7 @@ public class RundeckAlarmCallbackTest {
 
         final Map<String, Object> attributes = alarmCallback.getAttributes();
         assertThat(attributes.keySet(), hasItems("rundeck_url", "job_id", "api_token", "args",
-                "filter_include_node_name", "filter_include_hostname", "filter_include_tags",
-                "filter_exclude_node_name", "filter_exclude_hostname", "filter_exclude_tags",
-                "exclude_precedence"));
+                "filter_include", "filter_exclude", "exclude_precedence"));
         assertThat((String) attributes.get("api_token"), equalTo("****"));
     }
 
@@ -90,6 +84,19 @@ public class RundeckAlarmCallbackTest {
     }
 
     @Test(expected = ConfigurationException.class)
+    public void checkConfigurationFailsIfUsernameContainsInvalidCharacters()
+            throws AlarmCallbackConfigurationException, ConfigurationException {
+        final Map<String, Object> configSource = ImmutableMap.<String, Object>builder()
+                .put("job_id", "TEST-job-id")
+                .put("api_token", "TEST_api_token")
+                .put("as_user", "invalid&user")
+                .build();
+
+        alarmCallback.initialize(new Configuration(configSource));
+        alarmCallback.checkConfiguration();
+    }
+
+    @Test(expected = ConfigurationException.class)
     public void checkConfigurationFailsIfRundeckUrlIsInvalid()
             throws AlarmCallbackConfigurationException, ConfigurationException {
         final Map<String, Object> configSource = ImmutableMap.<String, Object>builder()
@@ -119,9 +126,7 @@ public class RundeckAlarmCallbackTest {
     public void testGetRequestedConfiguration() {
         assertThat(alarmCallback.getRequestedConfiguration().asList().keySet(),
                 hasItems("rundeck_url", "job_id", "api_token", "args",
-                        "filter_include_node_name", "filter_include_hostname", "filter_include_tags",
-                        "filter_exclude_node_name", "filter_exclude_hostname", "filter_exclude_tags",
-                        "exclude_precedence"));
+                        "filter_include", "filter_exclude", "exclude_precedence"));
     }
 
     @Test
