@@ -84,6 +84,19 @@ public class RundeckAlarmCallbackTest {
     }
 
     @Test(expected = ConfigurationException.class)
+    public void checkConfigurationFailsIfFieldArgsContainsInvalidCharacters()
+            throws AlarmCallbackConfigurationException, ConfigurationException {
+        final Map<String, Object> configSource = ImmutableMap.<String, Object>builder()
+                .put("job_id", "TEST-job-id")
+                .put("api_token", "TEST_api_token")
+                .put("field_args", "&-invalid field arg")
+                .build();
+
+        alarmCallback.initialize(new Configuration(configSource));
+        alarmCallback.checkConfiguration();
+    }
+
+    @Test(expected = ConfigurationException.class)
     public void checkConfigurationFailsIfUsernameContainsInvalidCharacters()
             throws AlarmCallbackConfigurationException, ConfigurationException {
         final Map<String, Object> configSource = ImmutableMap.<String, Object>builder()

@@ -1,8 +1,8 @@
 package org.graylog2.alarmcallbacks.rundeck;
 
 import com.google.common.base.CharMatcher;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
+import org.graylog2.plugin.MessageSummary;
 import org.graylog2.plugin.alarms.AlertCondition;
 import org.graylog2.plugin.alarms.callbacks.AlarmCallback;
 import org.graylog2.plugin.alarms.callbacks.AlarmCallbackConfigurationException;
@@ -12,9 +12,10 @@ import org.graylog2.plugin.configuration.ConfigurationException;
 import org.graylog2.plugin.configuration.ConfigurationRequest;
 import org.graylog2.plugin.configuration.fields.BooleanField;
 import org.graylog2.plugin.configuration.fields.ConfigurationField;
-import org.graylog2.plugin.configuration.fields.DropdownField;
 import org.graylog2.plugin.configuration.fields.TextField;
 import org.graylog2.plugin.streams.Stream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.client.*;
 import javax.ws.rs.core.MediaType;
@@ -22,14 +23,18 @@ import javax.ws.rs.core.Response;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class RundeckAlarmCallback implements AlarmCallback{
+    private static final Logger LOG = LoggerFactory.getLogger(RundeckAlarmCallback.class);
+
     private static final String CK_RUNDECK_URL = "rundeck_url";
     private static final String CK_JOB_ID      = "job_id";
     private static final String CK_API_TOKEN   = "api_token";
     private static final String CK_ARGS        = "args";
+    private static final String CK_FIELD_ARGS  = "field_args";
     private static final String CK_AS_USER     = "as_user";
     private static final String CK_FILTER_INCLUDE            = "filter_include";
     private static final String CK_FILTER_EXCLUDE            = "filter_exclude";
@@ -48,18 +53,24 @@ public class RundeckAlarmCallback implements AlarmCallback{
 
     @Override
     public void call(Stream stream, AlertCondition.CheckResult result) throws AlarmCallbackException {
-        int messageCount = result.getMatchingMessages().size();
-        Map<String, Object> fields = result.getMatchingMessages().get(messageCount-1).getFields();
+        // get fields from last message only
+        List<MessageSummary> messages = result.getMatchingMessages();
+        Map<String, Object> fields = messages.get(messages.size() - 1).getFields();
+
+        List<String> messageFields = Arrays.asList(configuration.getString(CK_FIELD_ARGS).split(","));
+
         String messageArgs = "";
         for (Map.Entry<String, Object> arg : fields.entrySet()) {
-            messageArgs = messageArgs + "-" + arg.getKey() + " " + arg.getValue() + " ";
+            if (messageFields.contains(arg.getKey())) {
+                messageArgs = messageArgs + "-" + arg.getKey() + " " + arg.getValue() + " ";
+            }
         }
+
+        List<String> includeFilters = Arrays.asList(configuration.getString(CK_FILTER_INCLUDE).split(","));
+        List<String> excludeFilters = Arrays.asList(configuration.getString(CK_FILTER_EXCLUDE).split(","));
 
         try {
             Client client = ClientBuilder.newClient();
-
-            List<String> includeFilters = Arrays.asList(configuration.getString(CK_FILTER_INCLUDE).split(","));
-            List<String> excludeFilters = Arrays.asList(configuration.getString(CK_FILTER_EXCLUDE).split(","));
 
             WebTarget webTarget = client.target(configuration.getString(CK_RUNDECK_URL) +
                     "/api/" + API_VERSION +
@@ -68,21 +79,24 @@ public class RundeckAlarmCallback implements AlarmCallback{
 
             for (String filter : includeFilters) {
                 String[] filterPair = filter.split(":");
-                String filterKey = filterPair[0];
-                String filterValue = filterPair[1];
+                if (filterPair.length == 2) {
+                    String filterKey = filterPair[0];
+                    String filterValue = filterPair[1];
 
-                if(!filterKey.trim().isEmpty() && !filterValue.trim().isEmpty()) {
-                    webTarget = webTarget.queryParam(filterKey, filterValue);
+                    if (!filterKey.trim().isEmpty() && !filterValue.trim().isEmpty()) {
+                        webTarget = webTarget.queryParam(filterKey, filterValue);
+                    }
                 }
             }
 
             for (String filter : excludeFilters) {
                 String[] filterPair = filter.split(":");
-                String filterKey = filterPair[0];
-                String filterValue = filterPair[1];
-
-                if (!filterKey.trim().isEmpty() && !filterValue.trim().isEmpty()) {
-                    webTarget = webTarget.queryParam("exclude-" + filterKey, filterValue);
+                if (filterPair.length == 2) {
+                    String filterKey = filterPair[0];
+                    String filterValue = filterPair[1];
+                    if (!filterKey.trim().isEmpty() && !filterValue.trim().isEmpty()) {
+                        webTarget = webTarget.queryParam("exclude-" + filterKey, filterValue);
+                    }
                 }
             }
 
@@ -90,7 +104,7 @@ public class RundeckAlarmCallback implements AlarmCallback{
                 webTarget = webTarget.queryParam("exclude-precedence",
                         Boolean.toString(configuration.getBoolean(CK_FILTER_EXCLUDE_PRECEDENCE)));
             }
-            if(!configuration.getString(CK_ARGS).trim().isEmpty()) {
+            if(!configuration.getString(CK_ARGS).trim().isEmpty() || !messageArgs.isEmpty()) {
                 webTarget = webTarget.queryParam("argString", messageArgs + configuration.getString(CK_ARGS));
             }
             if(!configuration.getString(CK_AS_USER).trim().isEmpty()) {
@@ -148,6 +162,10 @@ public class RundeckAlarmCallback implements AlarmCallback{
 
         if (configuration.stringIsSet(CK_ARGS) && !ARG_MATCHER.matchesAllOf(configuration.getString(CK_ARGS))) {
             throw new ConfigurationException("Job arguments should not contain /,?,&");
+        }
+
+        if (configuration.stringIsSet(CK_FIELD_ARGS) && !ARG_MATCHER.matchesAllOf(configuration.getString(CK_FIELD_ARGS))) {
+            throw new ConfigurationException("Field arguments should not contain /,?,&");
         }
 
         if (configuration.stringIsSet(CK_AS_USER) && !ARG_MATCHER.matchesAllOf(configuration.getString(CK_AS_USER))) {
@@ -210,6 +228,11 @@ public class RundeckAlarmCallback implements AlarmCallback{
         configurationRequest.addField(new TextField(
                         CK_ARGS, "Job arguments", "",
                         "Argument string to pass to the job, of the form: -opt value -opt2 value ...",
+                        ConfigurationField.Optional.OPTIONAL)
+        );
+        configurationRequest.addField(new TextField(
+                        CK_FIELD_ARGS, "Field arguments", "",
+                        "Comma separated list of message fields which should append as a argument to the job.",
                         ConfigurationField.Optional.OPTIONAL)
         );
 
