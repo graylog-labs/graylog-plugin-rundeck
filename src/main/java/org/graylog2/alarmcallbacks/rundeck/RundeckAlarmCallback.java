@@ -55,15 +55,22 @@ public class RundeckAlarmCallback implements AlarmCallback{
     public void call(Stream stream, AlertCondition.CheckResult result) throws AlarmCallbackException {
         // get fields from last message only
         List<MessageSummary> messages = result.getMatchingMessages();
-        Map<String, Object> fields = messages.get(messages.size() - 1).getFields();
+        MessageSummary lastMessage = messages.get(messages.size() - 1);
+        Map<String, Object> fields = lastMessage.getFields();
 
         List<String> messageFields = Arrays.asList(configuration.getString(CK_FIELD_ARGS).split(","));
 
         String messageArgs = "";
         for (Map.Entry<String, Object> arg : fields.entrySet()) {
             if (messageFields.contains(arg.getKey())) {
-                messageArgs = messageArgs + "-" + arg.getKey() + " " + arg.getValue() + " ";
+                messageArgs = messageArgs + "-" + arg.getKey() + " '" + arg.getValue() + "' ";
             }
+        }
+        if (messageFields.contains("source")) {
+            messageArgs = messageArgs + "-source '" + lastMessage.getSource() + "' ";
+        }
+        if (messageFields.contains("message")) {
+            messageArgs = messageArgs + "-message '" + lastMessage.getMessage() + "' ";
         }
 
         List<String> includeFilters = Arrays.asList(configuration.getString(CK_FILTER_INCLUDE).split(","));
