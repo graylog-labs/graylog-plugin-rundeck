@@ -14,8 +14,6 @@ import org.graylog2.plugin.configuration.fields.BooleanField;
 import org.graylog2.plugin.configuration.fields.ConfigurationField;
 import org.graylog2.plugin.configuration.fields.TextField;
 import org.graylog2.plugin.streams.Stream;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.client.*;
 import javax.ws.rs.core.MediaType;
@@ -23,13 +21,10 @@ import javax.ws.rs.core.Response;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class RundeckAlarmCallback implements AlarmCallback{
-    private static final Logger LOG = LoggerFactory.getLogger(RundeckAlarmCallback.class);
-
     private static final String CK_RUNDECK_URL = "rundeck_url";
     private static final String CK_JOB_ID      = "job_id";
     private static final String CK_API_TOKEN   = "api_token";
@@ -58,23 +53,27 @@ public class RundeckAlarmCallback implements AlarmCallback{
         MessageSummary lastMessage = messages.get(messages.size() - 1);
         Map<String, Object> fields = lastMessage.getFields();
 
-        List<String> messageFields = Arrays.asList(configuration.getString(CK_FIELD_ARGS).split(","));
+        List<String> messageFields  = Arrays.asList(configuration.getString(CK_FIELD_ARGS).split(","));
+        List<String> argumentList   = Arrays.asList(configuration.getString(CK_ARGS).split("&"));
+        List<String> includeFilters = Arrays.asList(configuration.getString(CK_FILTER_INCLUDE).split("&"));
+        List<String> excludeFilters = Arrays.asList(configuration.getString(CK_FILTER_EXCLUDE).split("&"));
 
         String messageArgs = "";
         for (Map.Entry<String, Object> arg : fields.entrySet()) {
             if (messageFields.contains(arg.getKey())) {
-                messageArgs = messageArgs + "-" + arg.getKey() + " '" + arg.getValue() + "' ";
+                messageArgs = messageArgs + "-" + arg.getKey() + " " + arg.getValue() + " ";
             }
         }
         if (messageFields.contains("source")) {
-            messageArgs = messageArgs + "-source '" + lastMessage.getSource() + "' ";
+            messageArgs = messageArgs + "-source " + lastMessage.getSource() + " ";
         }
         if (messageFields.contains("message")) {
-            messageArgs = messageArgs + "-message '" + lastMessage.getMessage() + "' ";
+            messageArgs = messageArgs + "-message " + lastMessage.getMessage() + " ";
         }
-
-        List<String> includeFilters = Arrays.asList(configuration.getString(CK_FILTER_INCLUDE).split(","));
-        List<String> excludeFilters = Arrays.asList(configuration.getString(CK_FILTER_EXCLUDE).split(","));
+        for (String arg : argumentList) {
+            String[] argumentPair = arg.split(":");
+            messageArgs = messageArgs + "-" + argumentPair[0] + " " + argumentPair[1] + " ";
+        }
 
         try {
             Client client = ClientBuilder.newClient();
@@ -112,7 +111,7 @@ public class RundeckAlarmCallback implements AlarmCallback{
                         Boolean.toString(configuration.getBoolean(CK_FILTER_EXCLUDE_PRECEDENCE)));
             }
             if(!configuration.getString(CK_ARGS).trim().isEmpty() || !messageArgs.isEmpty()) {
-                webTarget = webTarget.queryParam("argString", messageArgs + configuration.getString(CK_ARGS));
+                webTarget = webTarget.queryParam("argString", messageArgs);
             }
             if(!configuration.getString(CK_AS_USER).trim().isEmpty()) {
                 webTarget = webTarget.queryParam("asUser", configuration.getString(CK_AS_USER));
@@ -216,16 +215,16 @@ public class RundeckAlarmCallback implements AlarmCallback{
                         CK_FILTER_INCLUDE,
                         "Include Node filter",
                         "",
-                        "Run job on these nodes. Format is 'filter:value'. Filter can be 'name', 'hostname', " +
-                                "'tag' or 'os-[name,family,arch,version]'",
+                        "Run job on these nodes. Format is 'filter:value&filter:value'. Filter can be" +
+                                " 'name', 'hostname', 'tags' or 'os-[name,family,arch,version]'",
                         ConfigurationField.Optional.OPTIONAL)
         );
         configurationRequest.addField(new TextField(
                         CK_FILTER_EXCLUDE,
                         "Exclude Node filter",
                         "",
-                        "Exclude these nodes from job execution. Format is 'filter:value'. Filter can be 'name', " +
-                                "'hostname', 'tag' or 'os-[name,family,arch,version]'",
+                        "Exclude these nodes from job execution. Format is 'filter:value&filter:value'. Filter can be" +
+                                " 'name', 'hostname', 'tags' or 'os-[name,family,arch,version]'",
                         ConfigurationField.Optional.OPTIONAL)
         );
         configurationRequest.addField(new BooleanField(
@@ -234,7 +233,7 @@ public class RundeckAlarmCallback implements AlarmCallback{
         );
         configurationRequest.addField(new TextField(
                         CK_ARGS, "Job arguments", "",
-                        "Argument string to pass to the job, of the form: -opt value -opt2 value ...",
+                        "Argument string to pass to the job, of the form: 'key:value&key:value'",
                         ConfigurationField.Optional.OPTIONAL)
         );
         configurationRequest.addField(new TextField(
