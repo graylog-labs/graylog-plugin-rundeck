@@ -48,31 +48,37 @@ public class RundeckAlarmCallback implements AlarmCallback{
 
     @Override
     public void call(Stream stream, AlertCondition.CheckResult result) throws AlarmCallbackException {
-        // get fields from last message only
-        List<MessageSummary> messages = result.getMatchingMessages();
-        MessageSummary lastMessage = messages.get(messages.size() - 1);
-        Map<String, Object> fields = lastMessage.getFields();
+        String jobArguments = "";
+        List<String> argumentList     = Arrays.asList(configuration.getString(CK_ARGS).split("&"));
+        List<String> includeFilters   = Arrays.asList(configuration.getString(CK_FILTER_INCLUDE).split("&"));
+        List<String> excludeFilters   = Arrays.asList(configuration.getString(CK_FILTER_EXCLUDE).split("&"));
 
-        List<String> messageFields  = Arrays.asList(configuration.getString(CK_FIELD_ARGS).split(","));
-        List<String> argumentList   = Arrays.asList(configuration.getString(CK_ARGS).split("&"));
-        List<String> includeFilters = Arrays.asList(configuration.getString(CK_FILTER_INCLUDE).split("&"));
-        List<String> excludeFilters = Arrays.asList(configuration.getString(CK_FILTER_EXCLUDE).split("&"));
+        if (!result.getMatchingMessages().isEmpty()) {
+            // get fields from last message only
+            MessageSummary lastMessage = result.getMatchingMessages().get(0);
+            Map<String, Object> lastMessageFields = lastMessage.getFields();
+            List<String> fieldsOfInterest = Arrays.asList(configuration.getString(CK_FIELD_ARGS).split(","));
 
-        String messageArgs = "";
-        for (Map.Entry<String, Object> arg : fields.entrySet()) {
-            if (messageFields.contains(arg.getKey())) {
-                messageArgs = messageArgs + "-" + arg.getKey() + " " + arg.getValue() + " ";
+            // append message fields as job argument
+            for (Map.Entry<String, Object> arg : lastMessageFields.entrySet()) {
+                if (fieldsOfInterest.contains(arg.getKey())) {
+                    jobArguments = jobArguments + "-" + arg.getKey() + " '" + arg.getValue() + "' ";
+                }
+            }
+            // append message fields with getter functions
+            if (fieldsOfInterest.contains("source")) {
+                jobArguments = jobArguments + "-source '" + lastMessage.getSource() + "' ";
+            }
+            if (fieldsOfInterest.contains("message")) {
+                jobArguments = jobArguments + "-message '" + lastMessage.getMessage() + "' ";
             }
         }
-        if (messageFields.contains("source")) {
-            messageArgs = messageArgs + "-source " + lastMessage.getSource() + " ";
-        }
-        if (messageFields.contains("message")) {
-            messageArgs = messageArgs + "-message " + lastMessage.getMessage() + " ";
-        }
+        // append job arguments given by user
         for (String arg : argumentList) {
             String[] argumentPair = arg.split(":");
-            messageArgs = messageArgs + "-" + argumentPair[0] + " " + argumentPair[1] + " ";
+            if (argumentPair.length == 2) {
+                jobArguments = jobArguments + "-" + argumentPair[0] + " '" + argumentPair[1] + "' ";
+            }
         }
 
         try {
@@ -110,8 +116,8 @@ public class RundeckAlarmCallback implements AlarmCallback{
                 webTarget = webTarget.queryParam("exclude-precedence",
                         Boolean.toString(configuration.getBoolean(CK_FILTER_EXCLUDE_PRECEDENCE)));
             }
-            if(!configuration.getString(CK_ARGS).trim().isEmpty() || !messageArgs.isEmpty()) {
-                webTarget = webTarget.queryParam("argString", messageArgs);
+            if(!configuration.getString(CK_ARGS).trim().isEmpty() || !jobArguments.isEmpty()) {
+                webTarget = webTarget.queryParam("argString", jobArguments);
             }
             if(!configuration.getString(CK_AS_USER).trim().isEmpty()) {
                 webTarget = webTarget.queryParam("asUser", configuration.getString(CK_AS_USER));
