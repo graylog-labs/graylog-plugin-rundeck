@@ -1,4 +1,4 @@
-package org.graylog2.alarmcallbacks.rundeck;
+package org.graylog.alarmcallbacks.rundeck;
 
 import org.graylog2.plugin.Plugin;
 import org.graylog2.plugin.PluginMetaData;

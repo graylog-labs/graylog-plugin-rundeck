@@ -1,4 +1,4 @@
-package org.graylog2.alarmcallbacks.rundeck;
+package org.graylog.alarmcallbacks.rundeck;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableMap;
