@@ -8,7 +8,7 @@ addons:
       - rpm
 before_deploy:
   - mvn jdeb:jdeb && export RELEASE_DEB_FILE=$(ls target/*.deb)
-  - mvn rpm:rpm && export RELEASE_RPM_FILE=$(ls target/*.rpm)
+  - mvn rpm:rpm && export RELEASE_RPM_FILE=$(ls target/rpm/graylog-alarmcallback-rundeck/RPMS/noarch/graylog-alarmcallback-rundeck-*.rpm)
   - export RELEASE_PKG_FILE=$(ls target/graylog-alarmcallback-rundeck-*.jar)
   - echo "Deploying release to GitHub releases"
 deploy:
