@@ -2,3 +2,15 @@ language: java
 jdk:
   - oraclejdk7
   - oraclejdk8
+before_deploy:
+  - export RELEASE_PKG_FILE=$(ls target/graylog-alarmcallback-rundeck-*.jar)
+  - echo "Deploying release to GitHub releases"
+deploy:
+  provider: releases
+  api_key:
+    secure: Sjdiq2CjrhGRcMosalb5hz+nQhHYwBa2sA22v43S3hsVi5MSpC2OSp/ycOTf7d4BekuyDjbE3npEnAm6zUmbMl2g9ENapK6kb1YNYZBR6MSEdDwC6+3dDU2kAXoMKmFzdZRW0ArrPXzYOqQcyn2l1zvriFRJYVWdc1e6lPLF6YE=
+  file: "${RELEASE_PKG_FILE}"
+  skip_cleanup: true
+  on:
+    tags: true
+    jdk: oraclejdk7
