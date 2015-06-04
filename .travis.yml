@@ -4,7 +4,7 @@ jdk:
   - oraclejdk8
 before_deploy:
   - mvn jdeb:jdeb && export RELEASE_DEB_FILE=$(ls target/*.deb)
-  - mvn rpm:rpmb && export RELEASE_RPM_FILE=$(ls target/*.rpm)
+  - mvn rpm:rpm && export RELEASE_RPM_FILE=$(ls target/*.rpm)
   - export RELEASE_PKG_FILE=$(ls target/graylog-alarmcallback-rundeck-*.jar)
   - echo "Deploying release to GitHub releases"
 deploy:
