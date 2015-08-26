@@ -1,5 +1,5 @@
 # Rundeck alarm callback plugin
-[![Build Status](https://travis-ci.org/Graylog2/graylog-plugin-alarmcallback-rundeck.svg)](https://travis-ci.org/Graylog2/graylog-plugin-alarmcallback-rundeck)
+[![Build Status](https://travis-ci.org/Graylog2/graylog-plugin-rundeck.svg)](https://travis-ci.org/Graylog2/graylog-plugin-alarmcallback-rundeck)
 
 An alarm callback plugin for integrating [Rundeck](http://rundeck.org) into [Graylog](https://www.graylog.org).
 
