@@ -1,19 +1,22 @@
-# Rundeck alarm callback plugin
-[![Build Status](https://travis-ci.org/Graylog2/graylog-plugin-rundeck.svg)](https://travis-ci.org/Graylog2/graylog-plugin-alarmcallback-rundeck)
+Rundeck Plugin for Graylog
+==========================
+
+[![Build Status](https://travis-ci.org/Graylog2/graylog-plugin-rundeck.svg)](https://travis-ci.org/Graylog2/graylog-plugin-rundeck)
 
 An alarm callback plugin for integrating [Rundeck](http://rundeck.org) into [Graylog](https://www.graylog.org).
 
-## Instructions
+**Required Graylog version:** 1.0 and later
 
-#### Step 1: Installing the plugin
+## Installation
 
-Copy the `.jar` file that you received to your Graylog plugin directory which is configured in your `server.conf` configuration file using the `plugin_dir` variable.
+[Download the plugin](https://github.com/Graylog2/graylog-plugin-hipchat/releases)
+and place the `.jar` file in your Graylog plugin directory. The plugin directory
+is the `plugins/` folder relative from your `graylog-server` directory by default
+and can be configured in your `graylog.conf` file.
 
-Restart your `graylog-server` process to load the plugin.
+Restart `graylog-server` and you are done.
 
-Note that you should do this for every `graylog-server` instance you are running.
-
-#### Step 2: Configuring the plugin
+## Usage
 
 You should now be able to add Rundeck callbacks to your stream alert configurations. In order to establish a connection to the
 Rundeck API request an API token from the admin section of Rundeck.
@@ -22,7 +25,7 @@ Rundeck API request an API token from the admin section of Rundeck.
 
 The API url should look like `http://172.16.10.1:4440`. The job ID can be found in the Rundeck job definition under `UUID`.
 
-##### Node filter
+### Node filter
 
 If the job is not bound to a set of nodes in Rundeck you can define node filters in the plugin
 
@@ -35,7 +38,7 @@ master nodes with an exclude filter `tags:master`. The result is a list of slave
 By default the exclude filter have precidence over the include filters. Use the checkbox at the bottom to invert the result.
 Rundeck filters are not completely intuative you can read more [here](http://rundeck.org/2.4.2/api/index.html#using-node-filters).
 
-##### Job arguments
+### Job arguments
 
 ![Screenshot: Set job arguments](https://s3.amazonaws.com/graylog2public/images/plugin-rundeck-args.png)
 
@@ -50,4 +53,18 @@ Rundeck executes now jobs when the stream condition is triggered.
 
 This project is using Maven and requires Java 7 or higher.
 
-You can build the plugin (JAR) with `mvn package`. DEB and RPM packages can be build with `mvn jdeb:jdeb` and `mvn rpm:rpm` respectively.
+You can build a plugin (JAR) with `mvn package`.
+
+DEB and RPM packages can be build with `mvn jdeb:jdeb` and `mvn rpm:rpm` respectively.
+
+## Plugin Release
+
+We are using the maven release plugin:
+
+```
+$ mvn release:prepare
+[...]
+$ mvn release:perform
+```
+
+This sets the version numbers, creates a tag and pushes to GitHub. TravisCI will build the release artifacts and upload to GitHub automatically.
