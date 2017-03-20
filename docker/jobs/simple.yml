@@ -1,0 +1,17 @@
+- description: Simple job
+  executionEnabled: true
+  id: 804f107a-cafe-babe-0000-deadbeef0000
+  loglevel: INFO
+  name: simple
+  nodeFilterEditable: false
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - exec: echo $RD_JOB_NAME
+    keepgoing: false
+    pluginConfig:
+      WorkflowStrategy:
+        node-first: null
+    strategy: node-first
+  timeout: 30s
+  uuid: 804f107a-cafe-babe-0000-deadbeef0000

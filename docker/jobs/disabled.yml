@@ -1,0 +1,16 @@
+- description: Disabled job
+  executionEnabled: false
+  id: 804f107a-cafe-babe-0000-deadbeef0001
+  loglevel: INFO
+  name: disabled-job
+  nodeFilterEditable: false
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - exec: echo $RD_JOB_NAME
+    keepgoing: false
+    pluginConfig:
+      WorkflowStrategy:
+        node-first: null
+    strategy: node-first
+  uuid: 804f107a-cafe-babe-0000-deadbeef0001

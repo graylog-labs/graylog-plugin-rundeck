@@ -31,6 +31,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import static java.util.Objects.requireNonNull;
+
 public class RundeckAlarmCallback implements AlarmCallback {
     private static final Logger LOG = LoggerFactory.getLogger(RundeckAlarmCallback.class);
 
@@ -65,29 +67,29 @@ public class RundeckAlarmCallback implements AlarmCallback {
 
     @Override
     public void call(Stream stream, AlertCondition.CheckResult result) throws AlarmCallbackException {
-        String jobArguments = "";
-        List<String> argumentList = Arrays.asList(configuration.getString(CK_ARGS, "").split("&"));
-        List<String> includeFilters = Arrays.asList(configuration.getString(CK_FILTER_INCLUDE, "").split("&"));
-        List<String> excludeFilters = Arrays.asList(configuration.getString(CK_FILTER_EXCLUDE, "").split("&"));
+        final StringBuilder jobArguments = new StringBuilder();
+        final List<String> argumentList = Arrays.asList(configuration.getString(CK_ARGS, "").split("&"));
+        final List<String> includeFilters = Arrays.asList(configuration.getString(CK_FILTER_INCLUDE, "").split("&"));
+        final List<String> excludeFilters = Arrays.asList(configuration.getString(CK_FILTER_EXCLUDE, "").split("&"));
 
         if (!result.getMatchingMessages().isEmpty()) {
             // get fields from last message only
-            MessageSummary lastMessage = result.getMatchingMessages().get(0);
-            Map<String, Object> lastMessageFields = lastMessage.getFields();
-            List<String> fieldsOfInterest = Arrays.asList(configuration.getString(CK_FIELD_ARGS, "").split(","));
+            final MessageSummary lastMessage = result.getMatchingMessages().get(0);
+            final Map<String, Object> lastMessageFields = lastMessage.getFields();
+            final List<String> fieldsOfInterest = Arrays.asList(configuration.getString(CK_FIELD_ARGS, "").split(","));
 
             // append message fields as job argument
             for (Map.Entry<String, Object> arg : lastMessageFields.entrySet()) {
                 if (fieldsOfInterest.contains(arg.getKey())) {
-                    jobArguments = jobArguments + "-" + arg.getKey() + " '" + arg.getValue() + "' ";
+                    jobArguments.append("-").append(arg.getKey()).append(" '").append(arg.getValue()).append("' ");
                 }
             }
             // append message fields with getter functions
             if (fieldsOfInterest.contains("source")) {
-                jobArguments = jobArguments + "-source '" + lastMessage.getSource() + "' ";
+                jobArguments.append("-source '").append(lastMessage.getSource()).append("' ");
             }
             if (fieldsOfInterest.contains("message")) {
-                jobArguments = jobArguments + "-message '" + lastMessage.getMessage() + "' ";
+                jobArguments.append("-message '").append(lastMessage.getMessage()).append("' ");
             }
         }
 
@@ -95,12 +97,12 @@ public class RundeckAlarmCallback implements AlarmCallback {
         for (String arg : argumentList) {
             String[] argumentPair = arg.split(":");
             if (argumentPair.length == 2) {
-                jobArguments = jobArguments + "-" + argumentPair[0] + " '" + argumentPair[1] + "' ";
+                jobArguments.append("-").append(argumentPair[0]).append(" '").append(argumentPair[1]).append("' ");
             }
         }
 
         try {
-            final HttpUrl.Builder urlBuilder = HttpUrl.parse(configuration.getString(CK_RUNDECK_URL))
+            final HttpUrl.Builder urlBuilder = HttpUrl.parse(configuration.getString(CK_RUNDECK_URL, "http://localhost/"))
                     .newBuilder()
                     .addPathSegment("api")
                     .addPathSegment(API_VERSION)
@@ -134,8 +136,8 @@ public class RundeckAlarmCallback implements AlarmCallback {
             if (!configuration.getBoolean(CK_FILTER_EXCLUDE_PRECEDENCE)) {
                 urlBuilder.addQueryParameter("exclude-precedence", Boolean.toString(configuration.getBoolean(CK_FILTER_EXCLUDE_PRECEDENCE)));
             }
-            if (!jobArguments.isEmpty()) {
-                urlBuilder.addQueryParameter("argString", jobArguments);
+            if (jobArguments.length() > 0) {
+                urlBuilder.addQueryParameter("argString", jobArguments.toString());
             }
             if (!configuration.getString(CK_AS_USER, "").trim().isEmpty()) {
                 urlBuilder.addQueryParameter("asUser", configuration.getString(CK_AS_USER));

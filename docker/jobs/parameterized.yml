@@ -1,0 +1,20 @@
+- description: Parameterized Job
+  executionEnabled: true
+  id: 804f107a-cafe-babe-0000-deadbeef0003
+  loglevel: INFO
+  name: parameterized-job
+  nodeFilterEditable: false
+  options:
+  - description: Custom Argument
+    name: custom-arg
+    required: true
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - exec: echo $RD_OPTION_CUSTOM_ARG
+    keepgoing: false
+    pluginConfig:
+      WorkflowStrategy:
+        node-first: null
+    strategy: node-first
+  uuid: 804f107a-cafe-babe-0000-deadbeef0003

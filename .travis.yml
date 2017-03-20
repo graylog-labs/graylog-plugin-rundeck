@@ -1,4 +1,6 @@
-sudo: false
+sudo: required
+dist: trusty
+group: beta
 language: java
 jdk:
   - oraclejdk8
@@ -6,6 +8,13 @@ addons:
   apt:
     packages:
       - rpm
+cache:
+  directories:
+    - $HOME/.m2
+services:
+  - docker
+script:
+  - mvn test verify -Dmaven.javadoc.skip=true -B -V
 before_deploy:
   - mvn jdeb:jdeb && export RELEASE_DEB_FILE=$(ls target/*.deb)
   - mvn rpm:rpm && export RELEASE_RPM_FILE=$(find target/ -name '*.rpm' | tail -1)

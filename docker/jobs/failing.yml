@@ -1,0 +1,16 @@
+- description: Failing job
+  executionEnabled: true
+  id: 804f107a-cafe-babe-0000-deadbeef0002
+  loglevel: INFO
+  name: failing-job
+  nodeFilterEditable: false
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - exec: exit 1
+    keepgoing: false
+    pluginConfig:
+      WorkflowStrategy:
+        node-first: null
+    strategy: node-first
+  uuid: 804f107a-cafe-babe-0000-deadbeef0002

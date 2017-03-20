@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <prerequisites>
         <maven>3.0</maven>
@@ -31,6 +32,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
         <maven.install.skip>true</maven.install.skip>
@@ -38,6 +40,10 @@
         <maven.site.skip>true</maven.site.skip>
         <graylog2.version>2.0.0</graylog2.version>
         <graylog2.plugin-dir>/usr/share/graylog-server/plugin</graylog2.plugin-dir>
+
+        <rundeck.image>jordan/rundeck:2.7.3</rundeck.image>
+        <rundeck.port>4440</rundeck.port>
+        <token.port>12345</token.port>
     </properties>
 
     <dependencies>
@@ -84,7 +90,8 @@
                         </goals>
                         <configuration>
                             <transformers>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                             </transformers>
                         </configuration>
                     </execution>
@@ -157,6 +164,98 @@
                         </mapping>
                     </mappings>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>io.fabric8</groupId>
+                <artifactId>docker-maven-plugin</artifactId>
+                <version>0.20.0</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <skip>${skipTests}</skip>
+                    <images>
+                        <image>
+                            <alias>rundeck</alias>
+                            <name>${rundeck.image}</name>
+                            <run>
+                                <log>
+                                    <enabled>true</enabled>
+                                </log>
+                                <env>
+                                    <RUNDECK_ADMIN_PASSWORD>admin</RUNDECK_ADMIN_PASSWORD>
+                                    <SERVER_URL>http://127.0.0.1:4440</SERVER_URL>
+                                    <!-- Configuration for rundeck-cli -->
+                                    <RD_URL>http://127.0.0.1:4440/api/18</RD_URL>
+                                    <RD_USER>admin</RD_USER>
+                                    <RD_PASSWORD>admin</RD_PASSWORD>
+                                </env>
+                                <ports>
+                                    <port>+rundeck.host:rundeck.port:4440</port>
+                                    <port>+token.host:token.port:12345</port>
+                                </ports>
+                                <volumes>
+                                    <bind>
+                                        <volume>${project.basedir}/docker:/graylog:ro</volume>
+                                    </bind>
+                                </volumes>
+                                <wait>
+                                    <!-- The plugin waits until this URL is reachable via HTTP ... -->
+                                    <http>
+                                        <url>http://${rundeck.host}:${rundeck.port}/</url>
+                                        <method>GET</method>
+                                        <status>302</status>
+                                    </http>
+                                    <time>60000</time>
+                                    <shutdown>500</shutdown>
+                                    <exec>
+                                        <postStart>/graylog/prepare.sh</postStart>
+                                    </exec>
+                                </wait>
+                            </run>
+                        </image>
+                    </images>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>start</id>
+                        <phase>pre-integration-test</phase>
+                        <goals>
+                            <goal>start</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>stop</id>
+                        <phase>post-integration-test</phase>
+                        <goals>
+                            <goal>stop</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>2.19.1</version>
+                <configuration>
+                    <systemPropertyVariables>
+                        <rundeck.host>${rundeck.host}</rundeck.host>
+                        <rundeck.port>${rundeck.port}</rundeck.port>
+                        <token.host>${token.host}</token.host>
+                        <token.port>${token.port}</token.port>
+                    </systemPropertyVariables>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>integration-test</id>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.19.1</version>
             </plugin>
         </plugins>
     </build>
