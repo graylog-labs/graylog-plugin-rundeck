@@ -3,17 +3,34 @@ package org.graylog.alarmcallbacks.rundeck;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
+import okhttp3.OkHttpClient;
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.MockWebServer;
+import okhttp3.mockwebserver.RecordedRequest;
+import org.graylog2.alerts.AbstractAlertCondition;
+import org.graylog2.alerts.types.DummyAlertCondition;
+import org.graylog2.plugin.alarms.AlertCondition;
 import org.graylog2.plugin.alarms.callbacks.AlarmCallbackConfigurationException;
 import org.graylog2.plugin.configuration.Configuration;
 import org.graylog2.plugin.configuration.ConfigurationException;
+import org.graylog2.plugin.streams.Stream;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
+import java.util.Collections;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.hasItems;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.mock;
 
 public class RundeckAlarmCallbackTest {
     private static final ImmutableMap<String, Object> VALID_CONFIG_SOURCE = ImmutableMap.<String, Object>builder()
@@ -25,11 +42,14 @@ public class RundeckAlarmCallbackTest {
             .put("filter_exclude", "name:node02,tags:windows")
             .put("exclude_precedence", true)
             .build();
+
+    private final OkHttpClient okHttpClient = new OkHttpClient();
+
     private RundeckAlarmCallback alarmCallback;
 
     @Before
     public void setUp() {
-        alarmCallback = new RundeckAlarmCallback();
+        alarmCallback = new RundeckAlarmCallback(okHttpClient);
     }
 
     @Test
@@ -54,6 +74,42 @@ public class RundeckAlarmCallbackTest {
             throws AlarmCallbackConfigurationException, ConfigurationException {
         alarmCallback.initialize(new Configuration(VALID_CONFIG_SOURCE));
         alarmCallback.checkConfiguration();
+    }
+
+    @Test
+    public void testCallSucceedsWithValidConfiguration() throws Exception {
+        final MockResponse mockResponse = new MockResponse()
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_XML)
+                .setResponseCode(200);
+        final MockWebServer mockWebServer = new MockWebServer();
+        mockWebServer.enqueue(mockResponse);
+        mockWebServer.start();
+
+        final Stream mockStream = mock(Stream.class);
+        final AlertCondition.CheckResult checkResult = new AbstractAlertCondition.NegativeCheckResult(
+                new DummyAlertCondition(
+                        mockStream,
+                        "id",
+                        new DateTime(2017, 3, 20, 0, 0, DateTimeZone.UTC),
+                        "user",
+                        Collections.emptyMap())
+        );
+
+        final Configuration configuration = new Configuration(VALID_CONFIG_SOURCE);
+        configuration.setString("rundeck_url", mockWebServer.url("/").toString());
+
+        alarmCallback.initialize(configuration);
+        alarmCallback.checkConfiguration();
+        alarmCallback.call(mockStream, checkResult);
+
+        final RecordedRequest recordedRequest = mockWebServer.takeRequest(10, TimeUnit.SECONDS);
+        assertEquals(1, mockWebServer.getRequestCount());
+        assertEquals("POST /api/12/job/test-job-id/executions HTTP/1.1", recordedRequest.getRequestLine());
+        assertEquals("text/xml", recordedRequest.getHeader("Accept"));
+        assertEquals("test_api_token", recordedRequest.getHeader("X-Rundeck-Auth-Token"));
+        assertEquals(0L, recordedRequest.getBodySize());
+
+        mockWebServer.shutdown();
     }
 
     @Test(expected = ConfigurationException.class)
