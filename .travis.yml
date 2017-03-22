@@ -24,7 +24,7 @@ before_deploy:
 deploy:
   provider: releases
   api_key:
-    secure: mhqiep9z2S1kSzLdfo2rV5CBgs96tN6b8LRGDelL73sSLEBgEt6+1QE/iMPaZQa0F53CBbWR+dvBcv1rZsgQncwZJUlmEl8uZ+BADqWEWZU/Dla+PuAvwANIt3pi0zd9dr9VrkOolGjGlSFFGo4McD0VUVHyTdYTtaQQL8mJgFU=
+    secure: X/71JGGY3C9mbR9odUpTLdiz7o9JEe70DBwid+UlUuHK+B145yOSCI/ODdwkQFrxbJ7O+xcUe6Rm8cPGCaUtS8TYN67WuDuXxpEXPX5U1LkEwCzl6cB/eV3OOkiMIB+5k66TR9S3mNKDgd3/WIZvkWfu6CIoL3k9KcybEFWQRkA=
   file: 
     - "${RELEASE_PKG_FILE}"
     - "${RELEASE_DEB_FILE}"
