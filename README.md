@@ -1,6 +1,8 @@
 Rundeck Plugin for Graylog
 ==========================
 
+[![Github Downloads](https://img.shields.io/github/downloads/Graylog2/graylog-plugin-rundeck/total.svg)](https://github.com/Graylog2/graylog-plugin-rundeck/releases)
+[![GitHub Release](https://img.shields.io/github/release/Graylog2/graylog-plugin-rundeck.svg)](https://github.com/Graylog2/graylog-plugin-rundeck/releases)
 [![Build Status](https://travis-ci.org/Graylog2/graylog-plugin-rundeck.svg)](https://travis-ci.org/Graylog2/graylog-plugin-rundeck)
 
 An alarm callback plugin for integrating [Rundeck](http://rundeck.org) into [Graylog](https://www.graylog.org).
