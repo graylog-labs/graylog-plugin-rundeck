@@ -7,7 +7,7 @@
 
     <groupId>org.graylog.plugins</groupId>
     <artifactId>graylog-plugin-rundeck</artifactId>
-    <version>1.2.1</version>
+    <version>1.2.2-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>${project.artifactId}</name>
@@ -26,7 +26,7 @@
         <connection>scm:git:git@github.com:Graylog2/graylog-plugin-rundeck.git</connection>
         <developerConnection>scm:git:git@github.com:Graylog2/graylog-plugin-rundeck.git</developerConnection>
         <url>https://github.com/Graylog2/graylog-plugin-rundeck</url>
-        <tag>1.2.1</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <properties>
