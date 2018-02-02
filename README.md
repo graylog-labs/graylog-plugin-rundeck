@@ -1,9 +1,9 @@
 Rundeck Plugin for Graylog
 ==========================
 
-[![Github Downloads](https://img.shields.io/github/downloads/Graylog2/graylog-plugin-rundeck/total.svg)](https://github.com/Graylog2/graylog-plugin-rundeck/releases)
-[![GitHub Release](https://img.shields.io/github/release/Graylog2/graylog-plugin-rundeck.svg)](https://github.com/Graylog2/graylog-plugin-rundeck/releases)
-[![Build Status](https://travis-ci.org/Graylog2/graylog-plugin-rundeck.svg)](https://travis-ci.org/Graylog2/graylog-plugin-rundeck)
+[![Github Downloads](https://img.shields.io/github/downloads/graylog-labs/graylog-plugin-rundeck/total.svg)](https://github.com/graylog-labs/graylog-plugin-rundeck/releases)
+[![GitHub Release](https://img.shields.io/github/release/graylog-labs/graylog-plugin-rundeck.svg)](https://github.com/graylog-labs/graylog-plugin-rundeck/releases)
+[![Build Status](https://travis-ci.org/graylog-labs/graylog-plugin-rundeck.svg)](https://travis-ci.org/graylog-labs/graylog-plugin-rundeck)
 
 An alarm callback plugin for integrating [Rundeck](http://rundeck.org) into [Graylog](https://www.graylog.org).
 
@@ -11,7 +11,7 @@ An alarm callback plugin for integrating [Rundeck](http://rundeck.org) into [Gra
 
 ## Installation
 
-[Download the plugin](https://github.com/Graylog2/graylog-plugin-rundeck/releases)
+[Download the plugin](https://github.com/graylog-labs/graylog-plugin-rundeck/releases)
 and place the `.jar` file in your Graylog plugin directory. The plugin directory
 is the `plugins/` folder relative from your `graylog-server` directory by default
 and can be configured in your `graylog.conf` file.
